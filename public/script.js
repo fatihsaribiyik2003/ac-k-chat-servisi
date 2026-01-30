@@ -46,6 +46,29 @@ async function sendMessage(question) {
 }
 
 // Form gönderildiğinde
+// Bekleme animasyonunu ekle
+function showTyping() {
+    const typingDiv = document.createElement('div');
+    typingDiv.classList.add('typing-indicator');
+    typingDiv.id = 'typing-indicator';
+
+    for (let i = 0; i < 3; i++) {
+        const dot = document.createElement('div');
+        dot.classList.add('typing-dot');
+        typingDiv.appendChild(dot);
+    }
+
+    messagesContainer.appendChild(typingDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+// Bekleme animasyonunu kaldır
+function removeTyping() {
+    const typingDiv = document.getElementById('typing-indicator');
+    if (typingDiv) typingDiv.remove();
+}
+
+// Form gönderildiğinde
 chatForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -56,14 +79,18 @@ chatForm.addEventListener('submit', async (e) => {
     addMessage(question, 'user');
     userInput.value = '';
 
-    // Bot yazıyor efekti (opsiyonel basit hali)
+    // Bot yazıyor efekti
     const btn = document.getElementById('send-btn');
     btn.disabled = true;
+
+    // "Yapay zeka düşünüyor..." göster
+    showTyping();
 
     // Bot cevabını al
     const answer = await sendMessage(question);
 
-    // Bot mesajını ekle
+    // Animasyonu kaldır ve cevabı yaz
+    removeTyping();
     addMessage(answer, 'bot');
 
     btn.disabled = false;

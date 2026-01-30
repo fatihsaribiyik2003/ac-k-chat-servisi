@@ -27,11 +27,16 @@ app.post('/chat', async (req, res) => {
     }
 
     const data = await response.json();
+    console.log('API Yanıtı:', data); // Log başarısını gör
     res.json(data);
 
   } catch (error) {
-    console.error('Proxy hatası:', error);
-    res.status(500).json({ error: 'İşlem sırasında bir hata oluştu.' });
+    console.error('Proxy Hatası Detay:', error.message);
+    if (error.cause) console.error('Hata Nedeni:', error.cause);
+
+    res.status(500).json({
+      answer: "Üzgünüm, sistemde bir hata oluştu. Lütfen bağlantınızı kontrol edin veya daha sonra tekrar deneyin."
+    });
   }
 });
 
