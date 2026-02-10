@@ -1,5 +1,6 @@
 const express = require('express');
 const admin = require('firebase-admin');
+const path = require('path');
 const serviceAccount = require('./serviceAccountKey.json');
 
 // Firebase Admin SDK'yı başlat
@@ -18,8 +19,26 @@ app.use(express.json());
 // Public klasörünü statik olarak sun
 app.use(express.static('public'));
 
+// Panel Rotası (Temiz URL)
+app.get('/panel', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'panel.html'));
+});
+
+// Manuel Ekleme Rotası
+app.get('/add', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'add.html'));
+});
+
 // Chat Proxy Endpoint
 app.post('/chat', async (req, res) => {
+  // ... (existing code) ...
+
+  app.listen(port, () => {
+    console.log(`Server listening on port ${port}`);
+    console.log(`Chat: http://localhost:${port}`);
+    console.log(`Panel: http://localhost:${port}/panel`);
+    console.log(`Ekle: http://localhost:${port}/add`);
+  });
   try {
     const { question } = req.body;
 
@@ -94,4 +113,7 @@ app.get('/api/unanswered', async (req, res) => {
 
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
+  console.log(`Chat: http://localhost:${port}`);
+  console.log(`Panel: http://localhost:${port}/panel`);
+  console.log(`Ekle: http://localhost:${port}/add`);
 });
