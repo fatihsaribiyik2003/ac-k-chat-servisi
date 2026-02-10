@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cevaplanamayan Sorular Paneli</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            margin: 0;
+            padding: 20px;
+            color: #1f2937;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #111827;
+            font-size: 24px;
+            margin-bottom: 24px;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 12px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+        }
+        th, td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        th {
+            background-color: #f9fafb;
+            font-weight: 600;
+            color: #374151;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        tr:hover {
+            background-color: #f9fafb;
+        }
+        .empty-message {
+            text-align: center;
+            padding: 24px;
+            color: #6b7280;
+            font-style: italic;
+        }
+        .loading {
+            text-align: center;
+            padding: 24px;
+            color: #3b82f6;
+        }
+        .refresh-btn {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            margin-bottom: 16px;
+            float: right;
+        }
+        .refresh-btn:hover {
+            background-color: #1d4ed8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button class="refresh-btn" onclick="fetchLogs()">Yenile</button>
+        <h1>Cevaplanamayan Sorular</h1>
+        
+        <table id="logs-table">
+            <thead>
+                <tr>
+                    <th>Tarih</th>
+                    <th>Telefon</th>
+                    <th>Kullanıcı Mesajı</th>
+                    <th>Bot Cevabı</th>
+                </tr>
+            </thead>
+            <tbody id="logs-body">
+                <tr>
+                    <td colspan="4" class="loading">Yükleniyor...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        async function fetchLogs() {
+            const tbody = document.getElementById('logs-body');
+            tbody.innerHTML = '<tr><td colspan="4" class="loading">Yükleniyor...</td></tr>';
+
+            try {
+                const response = await fetch('/api/unanswered');
+                if (!response.ok) {
+                    throw new Error('Veri çekilemedi');
+                }
+                const data = await response.json();
+
+                tbody.innerHTML = '';
+
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="empty-message">Henüz kaydedilmiş bir soru yok.</td></tr>';
+                    return;
+                }
+
+                data.forEach(log => {
+                    const row = document.createElement('tr');
+                    
+                    // Tarih formatlama
+                    let dateStr = '-';
+                    if (log.timestamp) {
+                        const date = new Date(log.timestamp._seconds ? log.timestamp._seconds * 1000 : log.timestamp);
+                        dateStr = new Intl.DateTimeFormat('tr-TR', { 
+                            dateStyle: 'short', 
+                            timeStyle: 'medium' 
+                        }).format(date);
+                    }
+
+                    row.innerHTML = `
+                        <td>${dateStr}</td>
+                        <td>${log.phoneNumber || '-'}</td>
+                        <td>${log.userMessage || '-'}</td>
+                        <td>${log.botMessage || '-'}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+
+            } catch (error) {
+                console.error('Hata:', error);
+                tbody.innerHTML = '<tr><td colspan="4" class="empty-message" style="color:red;">Veriler yüklenirken hata oluştu.</td></tr>';
+            }
+        }
+
+        // Sayfa yüklendiğinde verileri çek
+        document.addEventListener('DOMContentLoaded', fetchLogs);
+    </script>
+</body>
+</html>

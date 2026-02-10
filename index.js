@@ -1,4 +1,14 @@
 const express = require('express');
+const admin = require('firebase-admin');
+const serviceAccount = require('./serviceAccountKey.json');
+
+// Firebase Admin SDK'yı başlat
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
+
+const db = admin.firestore();
+
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -37,6 +47,48 @@ app.post('/chat', async (req, res) => {
     res.status(500).json({
       answer: "Üzgünüm, sistemde bir hata oluştu. Lütfen bağlantınızı kontrol edin veya daha sonra tekrar deneyin."
     });
+  }
+});
+
+// Cevaplanamayan Soruları Kaydet (POST)
+app.post('/api/unanswered', async (req, res) => {
+  try {
+    const { phoneNumber, userMessage, botMessage } = req.body;
+
+    const logEntry = {
+      phoneNumber,
+      userMessage,
+      botMessage,
+      timestamp: admin.firestore.FieldValue.serverTimestamp()
+    };
+
+    await db.collection('unanswered_logs').add(logEntry);
+    res.status(201).json({ message: 'Log kaydedildi' });
+
+  } catch (error) {
+    console.error('Loglama Hatası:', error);
+    res.status(500).json({ error: 'Log kaydedilemedi' });
+  }
+});
+
+// Cevaplanamayan Soruları Getir (GET)
+app.get('/api/unanswered', async (req, res) => {
+  try {
+    const snapshot = await db.collection('unanswered_logs')
+      .orderBy('timestamp', 'desc')
+      .limit(50)
+      .get();
+
+    const logs = [];
+    snapshot.forEach(doc => {
+      logs.push({ id: doc.id, ...doc.data() });
+    });
+
+    res.json(logs);
+
+  } catch (error) {
+    console.error('Log Çekme Hatası:', error);
+    res.status(500).json({ error: 'Loglar çekilemedi' });
   }
 });
 
