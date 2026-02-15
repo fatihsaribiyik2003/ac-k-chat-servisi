@@ -25,14 +25,14 @@ function addMessage(text, sender) {
 }
 
 // Backend'e istek atma fonksiyonu
-async function sendMessage(question) {
+async function sendMessage(question, agent) {
     try {
         const response = await fetch('/chat', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ question: question })
+            body: JSON.stringify({ question: question, agent: agent })
         });
 
         if (!response.ok) throw new Error('Sunucu hatası');
@@ -73,6 +73,7 @@ chatForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const question = userInput.value.trim();
+
     if (!question) return;
 
     // Kullanıcı mesajını ekle
@@ -86,8 +87,12 @@ chatForm.addEventListener('submit', async (e) => {
     // "Yapay zeka düşünüyor..." göster
     showTyping();
 
+    // URL'den ajanı al
+    const urlParams = new URLSearchParams(window.location.search);
+    const agent = urlParams.get('agent') || 'main';
+
     // Bot cevabını al
-    const answer = await sendMessage(question);
+    const answer = await sendMessage(question, agent);
 
     // Animasyonu kaldır ve cevabı yaz
     removeTyping();
@@ -95,4 +100,37 @@ chatForm.addEventListener('submit', async (e) => {
 
     btn.disabled = false;
     userInput.focus();
+});
+
+// Sayfa yüklendiğinde başlığı güncelle
+document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const agent = urlParams.get('agent') || 'main';
+
+    // Sidebar active state
+    const links = document.querySelectorAll('.sidebar-menu a');
+    links.forEach(link => link.classList.remove('active'));
+
+    if (agent === 'edubride') {
+        document.querySelector('a[href="/?agent=edubride"]')?.classList.add('active');
+        document.querySelector('header .logo').textContent = 'Edubride Asistanı';
+        document.title = 'Edubride Chat - Fatih AI';
+        // Mesajı güncelle
+        const welcomeMsg = document.querySelector('.message.bot .message-content');
+        if (welcomeMsg) welcomeMsg.textContent = 'Merhaba! Edubride kaynaklarında arama yapabilirim. Sorularınızı bekliyorum.';
+    } else if (agent === 'medek') {
+        document.querySelector('a[href="/?agent=medek"]')?.classList.add('active');
+        document.querySelector('header .logo').textContent = 'Medek Asistanı';
+        document.title = 'Medek Chat';
+        // Mesajı güncelle
+        const welcomeMsg = document.querySelector('.message.bot .message-content');
+        if (welcomeMsg) welcomeMsg.textContent = 'Merhaba! Medek kaynaklarında arama yapabilirim. Sorularınızı bekliyorum.';
+    } else {
+        document.querySelector('a[href="/?agent=main"]')?.classList.add('active');
+        document.querySelector('header .logo').textContent = 'İstanbul Uni Asistanı';
+        document.title = 'İstanbul Uni Chat';
+        // Mesajı güncelle
+        const welcomeMsg = document.querySelector('.message.bot .message-content');
+        if (welcomeMsg) welcomeMsg.textContent = 'Merhaba! İstanbul Üniversitesi kaynaklarında arama yapabilirim. Sorularınızı bekliyorum.';
+    }
 });

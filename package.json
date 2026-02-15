@@ -21,6 +21,7 @@
   "homepage": "https://github.com/fatihsaribiyik2003/ac-k-chat-servisi#readme",
   "dependencies": {
     "express": "^5.2.1",
-    "firebase-admin": "^12.7.0"
+    "firebase-admin": "^12.7.0",
+    "node-fetch": "^2.7.0"
   }
 }

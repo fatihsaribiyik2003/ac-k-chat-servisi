@@ -2,6 +2,7 @@ const express = require('express');
 const admin = require('firebase-admin');
 const path = require('path');
 const serviceAccount = require('./serviceAccountKey.json');
+const fetch = require('node-fetch'); // node-fetch ekleniyor
 
 // Firebase Admin SDK'yı başlat
 admin.initializeApp({
@@ -29,21 +30,27 @@ app.get('/add', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'add.html'));
 });
 
+// Gizli Log Sayfası
+app.get('/gizli-logs', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'secret_logs.html'));
+});
+
 // Chat Proxy Endpoint
 app.post('/chat', async (req, res) => {
-  // ... (existing code) ...
-
-  app.listen(port, () => {
-    console.log(`Server listening on port ${port}`);
-    console.log(`Chat: http://localhost:${port}`);
-    console.log(`Panel: http://localhost:${port}/panel`);
-    console.log(`Ekle: http://localhost:${port}/add`);
-  });
   try {
-    const { question } = req.body;
+    const { question, agent } = req.body;
+
+    // Ajan seçimine göre URL belirle
+    let apiUrl = 'https://agentic-rag-main-700341739468.us-central1.run.app/ask'; // Varsayılan: Ana Proje
+
+    if (agent === 'edubride') {
+      apiUrl = 'https://agentic-rag-edubride-700341739468.us-central1.run.app/ask';
+    } else if (agent === 'medek') {
+      apiUrl = 'https://agentic-rag-medek-700341739468.us-central1.run.app/ask';
+    }
 
     // External servise istek at
-    const response = await fetch('https://agentic-rag-service-700341739468.us-central1.run.app/ask', {
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -56,7 +63,20 @@ app.post('/chat', async (req, res) => {
     }
 
     const data = await response.json();
-    console.log('API Yanıtı:', data); // Log başarısını gör
+
+    // Loglama işlemi (Tüm konuşmalar)
+    try {
+      await db.collection('all_chat_logs').add({
+        agent: agent || 'main',
+        userMessage: question,
+        botMessage: data.answer,
+        timestamp: admin.firestore.FieldValue.serverTimestamp()
+      });
+    } catch (logError) {
+      console.error('Chat loglama hatası:', logError);
+      // Loglama hatası chat akışını bozmamalı
+    }
+
     res.json(data);
 
   } catch (error) {
@@ -111,9 +131,33 @@ app.get('/api/unanswered', async (req, res) => {
   }
 });
 
+
+
+// Tüm Logları Getir (Gizli - GET)
+app.get('/api/all-logs', async (req, res) => {
+  try {
+    const snapshot = await db.collection('all_chat_logs')
+      .orderBy('timestamp', 'desc')
+      .limit(100) // Son 100 kayıt
+      .get();
+
+    const logs = [];
+    snapshot.forEach(doc => {
+      logs.push({ id: doc.id, ...doc.data() });
+    });
+
+    res.json(logs);
+
+  } catch (error) {
+    console.error('Tam Log Çekme Hatası:', error);
+    res.status(500).json({ error: 'Loglar çekilemedi' });
+  }
+});
+
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
   console.log(`Chat: http://localhost:${port}`);
   console.log(`Panel: http://localhost:${port}/panel`);
   console.log(`Ekle: http://localhost:${port}/add`);
+  console.log(`Gizli Loglar: http://localhost:${port}/gizli-logs`);
 });
