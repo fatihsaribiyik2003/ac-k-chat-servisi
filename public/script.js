@@ -52,11 +52,27 @@ function showTyping() {
     typingDiv.classList.add('typing-indicator');
     typingDiv.id = 'typing-indicator';
 
+    // Dots container
+    const dotsDiv = document.createElement('div');
+    dotsDiv.classList.add('typing-dots');
+
     for (let i = 0; i < 3; i++) {
         const dot = document.createElement('div');
         dot.classList.add('typing-dot');
-        typingDiv.appendChild(dot);
+        dotsDiv.appendChild(dot);
     }
+
+    // Text message
+    const textDiv = document.createElement('div');
+    textDiv.classList.add('typing-text');
+    textDiv.textContent = 'Yapay zeka düşünüyor, lütfen bekleyin...';
+
+    // Add elements to main div (dots first or text first? User asked for effect while waiting. Let's put dots then text)
+    // Actually typically dots are enough but user wants "AI is thinking" message.
+    // Let's put text then dots? Or dots then text.
+    // "Yapay zeka düşünüyor..." + dots
+    typingDiv.appendChild(dotsDiv);
+    typingDiv.appendChild(textDiv);
 
     messagesContainer.appendChild(typingDiv);
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
